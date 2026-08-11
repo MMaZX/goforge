@@ -1,0 +1,27 @@
+# Build artifacts
+/dist/
+/goforge
+*.exe
+*.test
+
+# Coverage
+*.out
+coverage.txt
+
+# Environment / secrets (see README: GoForge loads these, never commit them)
+.env
+*.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Local tool data, not part of the project
+/.codegraph/
+
+# Untracked local notes, not part of the project
+/plan.md
+/plan_traduccion.go
