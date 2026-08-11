@@ -25,11 +25,14 @@ type Config struct {
 	} `yaml:"migrations"`
 }
 
-// Load reads goforge.yaml from path, first loading a sibling .env file (if
-// present) into the process environment so ${VAR} references in the YAML
-// resolve. It does not overwrite variables already set in the environment.
-func Load(path string) (*Config, error) {
-	if err := loadDotEnv(DotEnvPath(path)); err != nil {
+// Load reads goforge.yaml from path, first loading a .env file into the
+// process environment so ${VAR} references in the YAML resolve. It does not
+// overwrite variables already set in the environment.
+//
+// envPath picks which .env to load. An empty string falls back to
+// DotEnvPath(path): the same directory as path, named ".env".
+func Load(path, envPath string) (*Config, error) {
+	if err := loadDotEnv(ResolveEnvPath(path, envPath)); err != nil {
 		return nil, err
 	}
 
@@ -57,6 +60,17 @@ func Load(path string) (*Config, error) {
 	}
 
 	return &raw, nil
+}
+
+// ResolveEnvPath returns the .env path to use: override if non-empty,
+// otherwise DotEnvPath(configPath). Callers that need to know where .env
+// lives (init, doctor) without going through Load should use this instead
+// of duplicating the fallback rule.
+func ResolveEnvPath(configPath, override string) string {
+	if override != "" {
+		return override
+	}
+	return DotEnvPath(configPath)
 }
 
 // DotEnvPath returns the .env path Load() reads relative to configPath:

@@ -9,6 +9,7 @@ var version = "dev"
 
 type globalFlags struct {
 	configPath string
+	envPath    string
 	json       bool
 }
 
@@ -22,6 +23,7 @@ func newRootCmd() *cobra.Command {
 		SilenceErrors: true,
 	}
 	root.PersistentFlags().StringVar(&flags.configPath, "config", "goforge.yaml", "path to goforge.yaml")
+	root.PersistentFlags().StringVar(&flags.envPath, "env-file", "", "path to the .env file (default: alongside --config, named .env)")
 	root.PersistentFlags().BoolVar(&flags.json, "json", false, "output machine-readable JSON instead of human-readable text")
 
 	root.AddCommand(
@@ -36,6 +38,7 @@ func newRootCmd() *cobra.Command {
 		newVersionCmd(flags),
 		newGenerateCmd(flags),
 		newMCPCmd(flags),
+		newDoctorCmd(flags),
 	)
 	return root
 }

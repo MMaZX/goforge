@@ -10,7 +10,7 @@ import (
 )
 
 func loadEngine(cmd *cobra.Command, flags *globalFlags) (*migration.Engine, *cliutil.Connection, *config.Config, error) {
-	cfg, err := config.Load(flags.configPath)
+	cfg, err := config.Load(flags.configPath, flags.envPath)
 	if err != nil {
 		return nil, nil, nil, &cliutil.ConfigError{Err: err}
 	}

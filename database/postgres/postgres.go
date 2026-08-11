@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"github.com/MMaZX/goforge/migration"
 )
@@ -18,11 +18,19 @@ type Provider struct {
 }
 
 // Open connects to PostgreSQL and verifies the connection.
+//
+// It builds the pool from a pq.Connector (via sql.OpenDB) rather than
+// sql.Open("postgres", dsn): lib/pq's Driver does not implement
+// driver.DriverContext, so sql.Open falls back to a path that ignores the
+// context entirely during the TCP dial — a ctx deadline would never
+// actually cut off connecting to an unreachable host. Connector.Connect
+// does honor it.
 func Open(ctx context.Context, dsn string) (*Provider, error) {
-	pool, err := sql.Open("postgres", dsn)
+	connector, err := pq.NewConnector(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: opening connection: %w", err)
 	}
+	pool := sql.OpenDB(connector)
 	if err := pool.PingContext(ctx); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("postgres: connecting: %w", err)

@@ -90,7 +90,13 @@ migrations:
 
 1. A variable already exported in the environment (e.g. by your shell, CI,
    or orchestrator) — takes precedence over `.env`.
-2. A `.env` file next to `goforge.yaml` (auto-loaded, optional, git-ignored).
+2. A `.env` file next to `goforge.yaml` (auto-loaded, optional, git-ignored)
+   — or wherever `--env-file <path>` points instead, if you don't want it
+   next to `goforge.yaml` (e.g. `secrets/db.env`, a path managed by your
+   secrets tooling, etc.). `goforge init` also respects `--env-file`: it
+   scaffolds the starter `.env` (with the `CHANGE_*` placeholders) at that
+   path instead of the default location, creating parent directories as
+   needed.
 3. A literal value written directly in `goforge.yaml` — works, but not
    recommended: that file is meant to be committed.
 
@@ -99,6 +105,9 @@ standard 12-factor pattern, chosen so the standalone CLI works in legacy
 projects without imposing its own secrets system.
 
 ## Commands
+
+Every command also accepts `--config <path>` (default `goforge.yaml`) and
+`--env-file <path>` (default: alongside `--config`, named `.env`).
 
 ```
 goforge init [--driver=postgres|mariadb|mysql]
@@ -109,12 +118,35 @@ goforge migrate:reset         --yes
 goforge migrate:fresh         --yes
 goforge make:migration <name> [--go]
 goforge validate              [--json]
+goforge doctor                 [--json]
 goforge generate
 goforge version
 goforge mcp
 ```
 
 Every command supports `--json` for machine-readable output.
+
+## `goforge doctor`
+
+Diagnoses a project's setup end-to-end instead of making you interpret the
+first error `migrate` happens to hit. It checks, in order — each one runs
+even if an earlier one failed, except where that's genuinely impossible:
+
+1. **Config** — `goforge.yaml` exists and parses.
+2. **`.env`** — informational: whether one was found next to `goforge.yaml`.
+3. **Migrations directory** — how many migrations were found, or why loading
+   them failed (duplicate version, missing `.up.sql`/`.down.sql` pair, etc.).
+4. **Database connection** — actually connects (bounded to 10s so an
+   unreachable host fails fast instead of hanging), and reports the real
+   server version and current database name.
+5. **Migration history** — how many are applied/pending/dirty, and runs the
+   same checksum/dirty-state validation as `goforge validate`.
+6. **Locking** — acquires and releases the migration lock
+   (`pg_advisory_lock` / `GET_LOCK`), to catch a lock left stuck by a
+   previous crashed run.
+
+Checks 5 and 6 are skipped (not failed) when the database connection itself
+didn't succeed. Exits non-zero if any check failed.
 
 ## Go migrations
 

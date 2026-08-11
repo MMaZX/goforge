@@ -57,6 +57,12 @@ func TestListAndNamesConsistent(t *testing.T) {
 		if d.ExampleDSN == "" {
 			t.Errorf("Descriptor %q has empty ExampleDSN", d.Driver)
 		}
+		if d.VersionQuery == "" {
+			t.Errorf("Descriptor %q has empty VersionQuery", d.Driver)
+		}
+		if d.CurrentDatabaseQuery == "" {
+			t.Errorf("Descriptor %q has empty CurrentDatabaseQuery", d.Driver)
+		}
 	}
 }
 

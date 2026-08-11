@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -33,9 +34,14 @@ func newInitCmd(flags *globalFlags) *cobra.Command {
 				return fmt.Errorf("creating migrations directory: %w", err)
 			}
 
-			envPath := config.DotEnvPath(flags.configPath)
+			envPath := config.ResolveEnvPath(flags.configPath, flags.envPath)
 			envCreated := false
 			if _, err := os.Stat(envPath); os.IsNotExist(err) {
+				if dir := filepath.Dir(envPath); dir != "." {
+					if err := os.MkdirAll(dir, 0o755); err != nil {
+						return fmt.Errorf("creating %s: %w", dir, err)
+					}
+				}
 				if err := os.WriteFile(envPath, []byte(envTemplate(desc)), 0o600); err != nil {
 					return fmt.Errorf("writing %s: %w", envPath, err)
 				}

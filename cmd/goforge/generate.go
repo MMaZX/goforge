@@ -16,7 +16,7 @@ func newGenerateCmd(flags *globalFlags) *cobra.Command {
 		Use:   "generate",
 		Short: "Generate the registry file for Go migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load(flags.configPath)
+			cfg, err := config.Load(flags.configPath, flags.envPath)
 			if err != nil {
 				return &cliutil.ConfigError{Err: err}
 			}

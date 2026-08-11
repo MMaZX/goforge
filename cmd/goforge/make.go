@@ -23,7 +23,7 @@ func newMakeMigrationCmd(flags *globalFlags) *cobra.Command {
 		Short: "Create a new migration file pair (or a Go migration stub)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load(flags.configPath)
+			cfg, err := config.Load(flags.configPath, flags.envPath)
 			if err != nil {
 				return &cliutil.ConfigError{Err: err}
 			}
