@@ -9,6 +9,7 @@ import (
 	"github.com/MMaZX/goforge/internal/cliutil"
 	"github.com/MMaZX/goforge/internal/config"
 	"github.com/MMaZX/goforge/internal/generator"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 func newGenerateCmd(flags *globalFlags) *cobra.Command {
@@ -20,10 +21,11 @@ func newGenerateCmd(flags *globalFlags) *cobra.Command {
 			if err != nil {
 				return &cliutil.ConfigError{Err: err}
 			}
+			applyConfigLanguage(flags, cfg)
 			if err := generator.Generate(cfg.Migrations.Path); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Generated %s\n", filepath.Join(cfg.Migrations.Path, generator.OutputFileName))
+			fmt.Fprint(cmd.OutOrStdout(), i18n.T("generate.created", filepath.Join(cfg.Migrations.Path, generator.OutputFileName)))
 			return nil
 		},
 	}

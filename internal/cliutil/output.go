@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -42,16 +43,9 @@ func FromRecords(records []migration.Record) []ExecutedMigration {
 	return out
 }
 
-// Plural returns "migration" or "migrations" depending on n.
-func Plural(n int) string {
-	if n == 1 {
-		return "migration"
-	}
-	return "migrations"
-}
-
 // PrintExecutedHuman prints the "✓ 000001_create_users" lines shown after a
-// successful migrate/rollback run.
+// successful migrate/rollback run. The line carries no words, so it is
+// identical in every language.
 func PrintExecutedHuman(w io.Writer, executed []ExecutedMigration) {
 	for _, m := range executed {
 		fmt.Fprintf(w, "✓ %06d_%s\n", m.Version, m.Name)
@@ -80,14 +74,15 @@ func FromStatusEntries(entries []migration.StatusEntry) []StatusRow {
 	return out
 }
 
-// PrintStatusHuman renders a status table for humans.
+// PrintStatusHuman renders a status table for humans, translated into the
+// active language. The --json path (FromStatusEntries) is never translated.
 func PrintStatusHuman(w io.Writer, rows []StatusRow) {
 	for _, r := range rows {
-		mark := "✗ pending"
+		mark := i18n.T("status.pending")
 		if r.Applied {
-			mark = fmt.Sprintf("✓ applied (batch %d)", r.Batch)
+			mark = i18n.T("status.applied", r.Batch)
 			if r.Dirty {
-				mark += " [DIRTY]"
+				mark += " " + i18n.T("status.dirty")
 			}
 		}
 		fmt.Fprintf(w, "%06d_%-40s %s\n", r.Version, r.Name, mark)

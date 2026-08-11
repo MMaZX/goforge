@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 // DoctorCheck is one diagnostic check `goforge doctor` ran.
@@ -20,9 +22,24 @@ type DoctorReport struct {
 	Checks  []DoctorCheck `json:"checks"`
 }
 
-// PrintDoctorHuman renders a DoctorReport as a checklist for humans.
+// doctorCheckKeys maps the stable English check names (which double as the
+// JSON "name" field) to their i18n keys. Unknown names pass through
+// untranslated, so adding a check never breaks human output.
+var doctorCheckKeys = map[string]string{
+	"Config":               "doctor.check.config",
+	".env":                 "doctor.check.env",
+	"Migrations directory": "doctor.check.migrations_dir",
+	"Database connection":  "doctor.check.db_connection",
+	"Migration history":    "doctor.check.history",
+	"Locking":              "doctor.check.locking",
+}
+
+// PrintDoctorHuman renders a DoctorReport as a checklist for humans, in the
+// active language. Name and Detail stay in English inside the struct so the
+// --json report remains a stable machine contract; only the fixed
+// boilerplate and the known check names are translated here, at print time.
 func PrintDoctorHuman(w io.Writer, report DoctorReport) {
-	fmt.Fprintln(w, "GoForge doctor")
+	fmt.Fprintln(w, i18n.T("doctor.header"))
 	fmt.Fprintln(w)
 	for _, c := range report.Checks {
 		mark := "✓"
@@ -32,7 +49,11 @@ func PrintDoctorHuman(w io.Writer, report DoctorReport) {
 		case !c.OK:
 			mark = "✗"
 		}
-		fmt.Fprintf(w, "%s %s\n", mark, c.Name)
+		name := c.Name
+		if key, ok := doctorCheckKeys[c.Name]; ok {
+			name = i18n.T(key)
+		}
+		fmt.Fprintf(w, "%s %s\n", mark, name)
 		if c.Detail != "" {
 			for _, line := range strings.Split(c.Detail, "\n") {
 				fmt.Fprintf(w, "    %s\n", line)
@@ -41,8 +62,8 @@ func PrintDoctorHuman(w io.Writer, report DoctorReport) {
 	}
 	fmt.Fprintln(w)
 	if report.Healthy {
-		fmt.Fprintln(w, "All checks passed.")
+		fmt.Fprintln(w, i18n.T("doctor.all_passed"))
 	} else {
-		fmt.Fprintln(w, "Some checks failed.")
+		fmt.Fprintln(w, i18n.T("doctor.some_failed"))
 	}
 }

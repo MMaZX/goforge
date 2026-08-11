@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -27,7 +28,7 @@ func newRollbackCmd(flags *globalFlags) *cobra.Command {
 				if flags.json {
 					return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": []any{}, "message": "nothing to roll back"})
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), "Nothing to roll back.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T("rollback.nothing"))
 				return nil
 			}
 			if err != nil {
@@ -42,7 +43,7 @@ func newRollbackCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%d %s rolled back successfully.\n", len(executed), cliutil.Plural(len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("rollback.done", len(executed)))
 			return nil
 		},
 	}

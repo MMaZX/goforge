@@ -12,6 +12,7 @@ import (
 
 	"github.com/MMaZX/goforge/internal/cliutil"
 	"github.com/MMaZX/goforge/internal/config"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 var migrationFileRE = regexp.MustCompile(`^(\d{6,})_`)
@@ -27,6 +28,7 @@ func newMakeMigrationCmd(flags *globalFlags) *cobra.Command {
 			if err != nil {
 				return &cliutil.ConfigError{Err: err}
 			}
+			applyConfigLanguage(flags, cfg)
 			slug := slugify(args[0])
 			nextVersion, err := nextMigrationVersion(cfg.Migrations.Path)
 			if err != nil {
@@ -42,7 +44,7 @@ func newMakeMigrationCmd(flags *globalFlags) *cobra.Command {
 				if err := os.WriteFile(path, []byte(goMigrationTemplate(nextVersion, slug)), 0o644); err != nil {
 					return fmt.Errorf("writing %s: %w", path, err)
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Created %s\nRun `goforge generate` to register it.\n", path)
+				fmt.Fprint(cmd.OutOrStdout(), i18n.T("make.created_go", path))
 				return nil
 			}
 
@@ -54,7 +56,7 @@ func newMakeMigrationCmd(flags *globalFlags) *cobra.Command {
 			if err := os.WriteFile(downPath, []byte("-- write your down migration here\n"), 0o644); err != nil {
 				return fmt.Errorf("writing %s: %w", downPath, err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created %s\nCreated %s\n", upPath, downPath)
+			fmt.Fprint(cmd.OutOrStdout(), i18n.T("make.created_sql", upPath, downPath))
 			return nil
 		},
 	}

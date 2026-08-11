@@ -23,6 +23,9 @@ type Config struct {
 	Migrations struct {
 		Path string `yaml:"path"`
 	} `yaml:"migrations"`
+	// Language is the optional UI language ("en"/"es") for human-facing CLI
+	// output. --lang and GOFORGE_LANG take precedence over it.
+	Language string `yaml:"language"`
 }
 
 // Load reads goforge.yaml from path, first loading a .env file into the

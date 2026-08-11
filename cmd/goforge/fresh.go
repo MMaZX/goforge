@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 func newFreshCmd(flags *globalFlags) *cobra.Command {
@@ -15,7 +17,7 @@ func newFreshCmd(flags *globalFlags) *cobra.Command {
 		Short: "Revert every applied migration and re-apply them all",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
-				return fmt.Errorf("migrate:fresh reverts and re-applies every migration; re-run with --yes to confirm")
+				return errors.New(i18n.T("fresh.confirm"))
 			}
 			engine, conn, _, err := loadEngine(cmd, flags)
 			if err != nil {
@@ -33,7 +35,7 @@ func newFreshCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "batch": result.Batch, "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%d %s applied successfully.\n", len(executed), cliutil.Plural(len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("migrate.applied", len(executed)))
 			return nil
 		},
 	}

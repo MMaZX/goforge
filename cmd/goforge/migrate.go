@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -23,7 +24,7 @@ func newMigrateCmd(flags *globalFlags) *cobra.Command {
 			defer conn.Close()
 
 			if !flags.json {
-				fmt.Fprintf(cmd.OutOrStdout(), "GoForge %s\nDatabase: %s\nMigrations: %s\n\n", version, driverLabel(cfg.Database.Driver), cfg.Migrations.Path)
+				fmt.Fprint(cmd.OutOrStdout(), i18n.T("app.header", version, driverLabel(cfg.Database.Driver), cfg.Migrations.Path))
 			}
 
 			result, err := engine.Up(cmd.Context(), steps)
@@ -31,7 +32,7 @@ func newMigrateCmd(flags *globalFlags) *cobra.Command {
 				if flags.json {
 					return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": []any{}, "message": "nothing to migrate"})
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), "Nothing to migrate.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T("migrate.nothing"))
 				return nil
 			}
 			if err != nil {
@@ -46,7 +47,7 @@ func newMigrateCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "batch": result.Batch, "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%d %s applied successfully.\n", len(executed), cliutil.Plural(len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("migrate.applied", len(executed)))
 			return nil
 		},
 	}

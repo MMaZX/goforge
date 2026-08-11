@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/MMaZX/goforge/internal/cliutil"
 	"github.com/MMaZX/goforge/internal/config"
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/internal/providers"
 	"github.com/MMaZX/goforge/migration"
 )
@@ -24,7 +26,7 @@ func newDoctorCmd(flags *globalFlags) *cobra.Command {
 		Use:   "doctor",
 		Short: "Diagnose the database connection and migrations setup",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			report := runDoctor(cmd.Context(), flags.configPath, flags.envPath)
+			report := runDoctor(cmd.Context(), flags)
 
 			if flags.json {
 				if err := cliutil.PrintJSON(cmd.OutOrStdout(), report); err != nil {
@@ -41,14 +43,14 @@ func newDoctorCmd(flags *globalFlags) *cobra.Command {
 						failed++
 					}
 				}
-				return fmt.Errorf("%d check(s) failed", failed)
+				return errors.New(i18n.Tn("doctor.checks_failed", failed))
 			}
 			return nil
 		},
 	}
 }
 
-func runDoctor(ctx context.Context, configPath, envPathOverride string) cliutil.DoctorReport {
+func runDoctor(ctx context.Context, flags *globalFlags) cliutil.DoctorReport {
 	var checks []cliutil.DoctorCheck
 	add := func(c cliutil.DoctorCheck) { checks = append(checks, c) }
 	healthy := func() bool {
@@ -60,7 +62,7 @@ func runDoctor(ctx context.Context, configPath, envPathOverride string) cliutil.
 		return true
 	}
 
-	cfg, err := config.Load(configPath, envPathOverride)
+	cfg, err := config.Load(flags.configPath, flags.envPath)
 	if err != nil {
 		add(cliutil.DoctorCheck{
 			Name:   "Config",
@@ -69,14 +71,15 @@ func runDoctor(ctx context.Context, configPath, envPathOverride string) cliutil.
 		})
 		return cliutil.DoctorReport{Healthy: false, Checks: checks}
 	}
+	applyConfigLanguage(flags, cfg)
 	desc, _ := providers.Resolve(cfg.Database.Driver) // already canonicalized by config.Load
 	add(cliutil.DoctorCheck{
 		Name:   "Config",
 		OK:     true,
-		Detail: fmt.Sprintf("%s (driver: %s, migrations: %s)", configPath, desc.Label, cfg.Migrations.Path),
+		Detail: fmt.Sprintf("%s (driver: %s, migrations: %s)", flags.configPath, desc.Label, cfg.Migrations.Path),
 	})
 
-	envPath := config.ResolveEnvPath(configPath, envPathOverride)
+	envPath := config.ResolveEnvPath(flags.configPath, flags.envPath)
 	if _, err := os.Stat(envPath); err == nil {
 		add(cliutil.DoctorCheck{Name: ".env", OK: true, Detail: fmt.Sprintf("found at %s", envPath)})
 	} else {

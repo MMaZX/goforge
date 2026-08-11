@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -17,7 +18,7 @@ func newResetCmd(flags *globalFlags) *cobra.Command {
 		Short: "Revert every applied migration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
-				return fmt.Errorf("migrate:reset reverts every applied migration; re-run with --yes to confirm")
+				return errors.New(i18n.T("reset.confirm"))
 			}
 			engine, conn, _, err := loadEngine(cmd, flags)
 			if err != nil {
@@ -30,7 +31,7 @@ func newResetCmd(flags *globalFlags) *cobra.Command {
 				if flags.json {
 					return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": []any{}, "message": "nothing to reset"})
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), "Nothing to reset.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T("reset.nothing"))
 				return nil
 			}
 			if err != nil {
@@ -42,7 +43,7 @@ func newResetCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprintf(cmd.OutOrStdout(), "\n%d %s reset successfully.\n", len(executed), cliutil.Plural(len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("reset.done", len(executed)))
 			return nil
 		},
 	}

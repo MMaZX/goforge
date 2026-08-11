@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 func newValidateCmd(flags *globalFlags) *cobra.Command {
@@ -28,7 +29,7 @@ func newValidateCmd(flags *globalFlags) *cobra.Command {
 			if flags.json {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok"})
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Migrations are valid.")
+			fmt.Fprintln(cmd.OutOrStdout(), i18n.T("validate.ok"))
 			return nil
 		},
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/MMaZX/goforge/internal/cliutil"
 	"github.com/MMaZX/goforge/internal/config"
+	"github.com/MMaZX/goforge/internal/i18n"
 	"github.com/MMaZX/goforge/internal/providers"
 )
 
@@ -25,7 +27,7 @@ func newInitCmd(flags *globalFlags) *cobra.Command {
 			}
 
 			if _, err := os.Stat(flags.configPath); err == nil {
-				return fmt.Errorf("%s already exists", flags.configPath)
+				return errors.New(i18n.T("init.already_exists", flags.configPath))
 			}
 			if err := os.WriteFile(flags.configPath, []byte(configTemplate(desc.Driver)), 0o644); err != nil {
 				return fmt.Errorf("writing %s: %w", flags.configPath, err)
@@ -64,14 +66,14 @@ func newInitCmd(flags *globalFlags) *cobra.Command {
 
 			out := cmd.OutOrStdout()
 			if envCreated {
-				fmt.Fprintf(out, "Created %s, ./migrations and %s\n", flags.configPath, envPath)
-				fmt.Fprintf(out, "Driver: %s\n\n", desc.Label)
-				fmt.Fprintf(out, "Edit %s and replace CHANGE_USER, CHANGE_PASSWORD, CHANGE_HOST and CHANGE_DATABASE with your real credentials:\n", envPath)
-				fmt.Fprintf(out, "  DATABASE_URL=%s\n", desc.ExampleDSN)
+				fmt.Fprint(out, i18n.T("init.created_full", flags.configPath, envPath))
+				fmt.Fprint(out, i18n.T("init.driver_line", desc.Label))
+				fmt.Fprintln(out)
+				fmt.Fprint(out, i18n.T("init.edit_env", envPath, desc.ExampleDSN))
 			} else {
-				fmt.Fprintf(out, "Created %s and ./migrations\n", flags.configPath)
-				fmt.Fprintf(out, "Driver: %s\n", desc.Label)
-				fmt.Fprintf(out, "%s already exists, left untouched.\n", envPath)
+				fmt.Fprint(out, i18n.T("init.created", flags.configPath))
+				fmt.Fprint(out, i18n.T("init.driver_line", desc.Label))
+				fmt.Fprint(out, i18n.T("init.env_untouched", envPath))
 			}
 			return nil
 		},

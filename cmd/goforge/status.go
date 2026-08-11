@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 func newStatusCmd(flags *globalFlags) *cobra.Command {
@@ -28,7 +29,7 @@ func newStatusCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": rows})
 			}
 			if len(rows) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No migrations found.")
+				fmt.Fprintln(cmd.OutOrStdout(), i18n.T("status.empty"))
 				return nil
 			}
 			cliutil.PrintStatusHuman(cmd.OutOrStdout(), rows)

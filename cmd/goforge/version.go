@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
+	"github.com/MMaZX/goforge/internal/i18n"
 )
 
 func newVersionCmd(flags *globalFlags) *cobra.Command {
@@ -16,7 +17,7 @@ func newVersionCmd(flags *globalFlags) *cobra.Command {
 			if flags.json {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"version": version})
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "GoForge %s\n", version)
+			fmt.Fprint(cmd.OutOrStdout(), i18n.T("app.version", version))
 			return nil
 		},
 	}
