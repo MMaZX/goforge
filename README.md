@@ -39,31 +39,69 @@ go get github.com/MMaZX/goforge
 ## Quick start
 
 ```sh
-goforge init                       # creates goforge.yaml + ./migrations
+goforge init --driver=postgres     # or mariadb / mysql (an alias of mariadb)
 goforge make:migration create_users
 # edit migrations/000001_create_users.{up,down}.sql
+# edit .env: fill in the CHANGE_* placeholders goforge init generated for you
 goforge migrate
 goforge migrate:status
 ```
+
+`goforge init --driver=<name>` creates three things:
+
+- `goforge.yaml`, with `database.driver` set to the driver you chose and
+  `database.url: ${DATABASE_URL}` — never a literal credential.
+- `./migrations`.
+- `.env` (only if one doesn't already exist next to `goforge.yaml`), with a
+  `DATABASE_URL` already in the correct syntax for that driver, e.g.:
+
+  ```sh
+  # --driver=postgres
+  DATABASE_URL=postgres://CHANGE_USER:CHANGE_PASSWORD@CHANGE_HOST:5432/CHANGE_DATABASE?sslmode=disable
+
+  # --driver=mariadb (or --driver=mysql)
+  DATABASE_URL=CHANGE_USER:CHANGE_PASSWORD@tcp(CHANGE_HOST:3306)/CHANGE_DATABASE?parseTime=true
+  ```
+
+  PostgreSQL and MariaDB use unrelated DSN syntaxes (a URL vs.
+  `go-sql-driver/mysql`'s own format), which is exactly why `init` writes it
+  out for you instead of leaving you to look it up. Replace the `CHANGE_*`
+  placeholders with your real credentials — `.env` is already in
+  `.gitignore` and is never committed.
+
+Every driver GoForge supports — canonical name, aliases, human label, and
+example DSN — is defined in one place: `internal/providers`. Nothing else in
+the codebase hardcodes the list.
+
+## Configuration and credentials
 
 `goforge.yaml`:
 
 ```yaml
 database:
-  driver: postgres   # or mariadb
+  driver: postgres   # postgres, mariadb, or an alias (postgresql, pg, mysql)
   url: ${DATABASE_URL}
 
 migrations:
   path: ./migrations
 ```
 
-`DATABASE_URL` can come from the environment or a `.env` file next to
-`goforge.yaml`.
+`${VAR}` references in `goforge.yaml` are resolved, in order, from:
+
+1. A variable already exported in the environment (e.g. by your shell, CI,
+   or orchestrator) — takes precedence over `.env`.
+2. A `.env` file next to `goforge.yaml` (auto-loaded, optional, git-ignored).
+3. A literal value written directly in `goforge.yaml` — works, but not
+   recommended: that file is meant to be committed.
+
+No separate credentials file or keychain exists beyond this — it's the
+standard 12-factor pattern, chosen so the standalone CLI works in legacy
+projects without imposing its own secrets system.
 
 ## Commands
 
 ```
-goforge init
+goforge init [--driver=postgres|mariadb|mysql]
 goforge migrate               [--steps N]
 goforge migrate:status        [--json]
 goforge migrate:rollback      [--steps N] [--json]

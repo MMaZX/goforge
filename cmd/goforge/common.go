@@ -1,12 +1,11 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"github.com/MMaZX/goforge/internal/cliutil"
 	"github.com/MMaZX/goforge/internal/config"
+	"github.com/MMaZX/goforge/internal/providers"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -23,12 +22,8 @@ func loadEngine(cmd *cobra.Command, flags *globalFlags) (*migration.Engine, *cli
 }
 
 func driverLabel(driver string) string {
-	switch driver {
-	case "postgres":
-		return "PostgreSQL"
-	case "mariadb":
-		return "MariaDB"
-	default:
-		return strings.ToUpper(driver[:1]) + driver[1:]
+	if d, err := providers.Resolve(driver); err == nil {
+		return d.Label
 	}
+	return driver
 }

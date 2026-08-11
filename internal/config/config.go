@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/MMaZX/goforge/internal/providers"
 )
 
 // Config is the parsed content of goforge.yaml, with ${VAR} references
@@ -27,7 +29,7 @@ type Config struct {
 // present) into the process environment so ${VAR} references in the YAML
 // resolve. It does not overwrite variables already set in the environment.
 func Load(path string) (*Config, error) {
-	if err := loadDotEnv(dotEnvPath(path)); err != nil {
+	if err := loadDotEnv(DotEnvPath(path)); err != nil {
 		return nil, err
 	}
 
@@ -41,9 +43,12 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("config: parsing %s: %w", path, err)
 	}
 
-	if raw.Database.Driver == "" {
-		return nil, fmt.Errorf("config: database.driver is required")
+	desc, err := providers.Resolve(raw.Database.Driver)
+	if err != nil {
+		return nil, fmt.Errorf("config: database.driver: %w", err)
 	}
+	raw.Database.Driver = desc.Driver
+
 	if raw.Database.URL == "" {
 		return nil, fmt.Errorf("config: database.url is required")
 	}
@@ -54,7 +59,9 @@ func Load(path string) (*Config, error) {
 	return &raw, nil
 }
 
-func dotEnvPath(configPath string) string {
+// DotEnvPath returns the .env path Load() reads relative to configPath:
+// the same directory, named ".env".
+func DotEnvPath(configPath string) string {
 	dir := "."
 	if idx := strings.LastIndexByte(configPath, '/'); idx >= 0 {
 		dir = configPath[:idx]

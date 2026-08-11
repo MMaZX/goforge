@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/MMaZX/goforge/database/mariadb"
 	"github.com/MMaZX/goforge/database/postgres"
 	"github.com/MMaZX/goforge/internal/config"
+	"github.com/MMaZX/goforge/internal/providers"
 	"github.com/MMaZX/goforge/migration"
 )
 
@@ -24,10 +26,17 @@ type Connection struct {
 
 func (c *Connection) Close() error { return c.close() }
 
-// Connect opens a database connection for cfg.Database.Driver. Only
-// "postgres" and "mariadb" are supported in V0.1.
+// Connect opens a database connection for cfg.Database.Driver. See
+// internal/providers for the supported drivers; config.Load already
+// canonicalizes cfg.Database.Driver, this Resolve call is defense in depth
+// for callers that build a Config by hand.
 func Connect(ctx context.Context, cfg *config.Config) (*Connection, error) {
-	switch cfg.Database.Driver {
+	desc, err := providers.Resolve(cfg.Database.Driver)
+	if err != nil {
+		return nil, fmt.Errorf("cliutil: %w", err)
+	}
+
+	switch desc.Driver {
 	case "postgres":
 		p, err := postgres.Open(ctx, cfg.Database.URL)
 		if err != nil {
@@ -41,7 +50,7 @@ func Connect(ctx context.Context, cfg *config.Config) (*Connection, error) {
 		}
 		return &Connection{Provider: p, DB: p.DB(), close: p.Close}, nil
 	default:
-		return nil, fmt.Errorf("cliutil: unsupported database driver %q (supported: postgres, mariadb)", cfg.Database.Driver)
+		return nil, fmt.Errorf("cliutil: unsupported database driver %q (supported: %s)", desc.Driver, strings.Join(providers.Names(), ", "))
 	}
 }
 
