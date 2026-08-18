@@ -42,6 +42,27 @@ var english = Catalog{
 	"fresh.confirm": "migrate:fresh reverts and re-applies every migration; re-run with --yes to confirm",
 	"reset.confirm": "migrate:reset reverts every applied migration; re-run with --yes to confirm",
 
+	// Interactive confirmation prompts and warnings.
+	"confirm.word":                  "yes",
+	"confirm.type_to_confirm":       "Type \"%s\" to confirm: ",
+	"confirm.cancelled":             "Operation cancelled by user (confirmation must be exactly \"%s\").\n",
+	"confirm.cancelled_step":        "Operation cancelled at step %d. No changes were made.\n",
+	"confirm.non_tty_error":         "the --yes flag is required in non-interactive environments",
+	"confirm.migrate.header_one":    "The following %d pending migration will be applied:\n",
+	"confirm.migrate.header_other":  "The following %d pending migrations will be applied:\n",
+	"confirm.migrate.prompt":        "Are you sure you want to apply these migrations?\n",
+	"confirm.rollback.warning":      "[WARNING] Destructive operation: This action will revert database changes.\n",
+	"confirm.rollback.header_one":   "The following %d migration will be rolled back (Batch %d):\n",
+	"confirm.rollback.header_other": "The following %d migrations will be rolled back (Batch %d):\n",
+	"confirm.rollback.step1":        "[1/2] Are you sure you want to rollback this migration?\n",
+	"confirm.rollback.step2":        "[2/2] THIS ACTION CANNOT BE UNDONE. Type \"%s\" to definitively confirm: ",
+	"confirm.reset.warning":         "[DANGER] migrate:reset will revert ALL applied migrations and drop data.\n",
+	"confirm.reset.step1":           "[1/2] Are you sure you want to revert ALL applied migrations?\n",
+	"confirm.reset.step2":           "[2/2] ALL DATA WILL BE LOST. Type \"%s\" a second time to execute: ",
+	"confirm.fresh.warning":         "[DANGER] migrate:fresh will revert ALL tables and data before re-applying.\n",
+	"confirm.fresh.step1":           "[1/2] Are you sure you want to wipe and re-apply all migrations?\n",
+	"confirm.fresh.step2":           "[2/2] ALL DATA WILL BE LOST. Type \"%s\" a second time to execute: ",
+
 	// goforge migrate:status (human table rendered by cliutil).
 	"status.empty":   "No migrations found.",
 	"status.applied": "✓ applied (batch %d)",

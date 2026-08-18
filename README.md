@@ -22,6 +22,8 @@ SQL or Go migrations against PostgreSQL or MariaDB, tracks what has been
 applied in a `goforge_migrations` table, and refuses to run when it detects
 tampering (checksum mismatch) or a crash mid-migration (dirty state).
 
+Full command reference, flags, and examples: [USAGE.md](USAGE.md).
+
 ## Install
 
 As a standalone binary — no PHP, Node, or Go runtime required to run it:
