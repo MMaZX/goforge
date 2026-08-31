@@ -1,6 +1,6 @@
 # GoForge
 
-Portable, reusable database migrations for PostgreSQL and MariaDB — as a Go module, a standalone CLI, and an MCP server for AI agents.
+Migraciones de base de datos portables y reutilizables para PostgreSQL y MariaDB — como módulo de Go, como CLI independiente y como servidor MCP para agentes de IA.
 
 ```
                   GoForge
@@ -8,108 +8,131 @@ Portable, reusable database migrations for PostgreSQL and MariaDB — as a Go mo
        ┌─────────────┼──────────────┐
        │             │              │
        ▼             ▼              ▼
-   Go Module       CLI            MCP
+   Módulo Go        CLI            MCP
        │             │              │
        ▼             ▼              ▼
- proyectos Go    legacy PHP     AI Agents
+ proyectos Go    PHP legacy     agentes de IA
                      │
                      ▼
              PostgreSQL/MariaDB
 ```
 
-GoForge is not a framework, an ORM, or a query builder. It runs versioned
-SQL or Go migrations against PostgreSQL or MariaDB, tracks what has been
-applied in a `goforge_migrations` table, and refuses to run when it detects
-tampering (checksum mismatch) or a crash mid-migration (dirty state).
+## Para qué sirve
 
-Full command reference, flags, and examples: [USAGE.md](USAGE.md).
+GoForge es una herramienta de **migración de esquema y datos de bases de datos**:
+te ayuda a versionar los cambios de tu base de datos y aplicarlos de forma
+controlada y repetible.
 
-## Install
+El objetivo es que puedas **incorporarla a cualquier proyecto** — uno legacy que
+arrastras desde hace años o uno que estás empezando hoy — **sin reinventar la
+rueda** montando tu propio sistema de migraciones de propósito general. Es
+especialmente útil en proyectos que no tienen un migrador fuerte (o no tienen
+ninguno): scripts sueltos de PHP, un servicio pequeño de Go, un monolito sin
+framework, etc.
 
-As a standalone binary — no PHP, Node, or Go runtime required to run it:
+Como se distribuye en un **único binario** y un **CLI**, puede usarse en
+cualquier entorno sin depender de PHP, Node ni de un runtime de Go. Y en
+proyectos de Go puedes además embeber el motor como módulo.
+
+La sintaxis de los comandos de migración (`migrate`, `migrate:rollback`,
+`migrate:fresh`, `make:migration`, …) está inspirada directamente en
+`artisan migrate` de Laravel, para que resulte familiar de inmediato.
+
+GoForge no es un framework, ni un ORM, ni un query builder. Ejecuta migraciones
+versionadas en SQL o en Go contra PostgreSQL o MariaDB, registra lo que ya se ha
+aplicado en una tabla `goforge_migrations`, y se niega a ejecutar cuando detecta
+manipulación (checksum que no coincide) o una caída a mitad de una migración
+(estado *dirty*).
+
+Referencia completa de comandos, flags y ejemplos: [USAGE.md](USAGE.md).
+
+## Instalación
+
+Como binario independiente — no requiere PHP, Node ni un runtime de Go para
+ejecutarse:
 
 ```sh
 go install github.com/MMaZX/goforge/cmd/goforge@latest
 ```
 
-As a Go module, to build the engine into your own program:
+Como módulo de Go, para compilar el motor dentro de tu propio programa:
 
 ```sh
 go get github.com/MMaZX/goforge
 ```
 
-## Quick start
+## Inicio rápido
 
 ```sh
-goforge init --driver=postgres     # or mariadb / mysql (an alias of mariadb)
+goforge init --driver=postgres     # o mariadb / mysql (alias de mariadb)
 goforge make:migration create_users
-# edit migrations/000001_create_users.{up,down}.sql
-# edit .env: fill in the CHANGE_* placeholders goforge init generated for you
+# edita migrations/000001_create_users.{up,down}.sql
+# edita .env: rellena los marcadores CHANGE_* que goforge init generó por ti
 goforge migrate
 goforge migrate:status
 ```
 
-`goforge init --driver=<name>` creates three things:
+`goforge init --driver=<nombre>` crea tres cosas:
 
-- `goforge.yaml`, with `database.driver` set to the driver you chose and
-  `database.url: ${DATABASE_URL}` — never a literal credential.
+- `goforge.yaml`, con `database.driver` fijado al driver que elegiste y
+  `database.url: ${DATABASE_URL}` — nunca una credencial literal.
 - `./migrations`.
-- `.env` (only if one doesn't already exist next to `goforge.yaml`), with a
-  `DATABASE_URL` already in the correct syntax for that driver, e.g.:
+- `.env` (solo si no existe ya uno junto a `goforge.yaml`), con un
+  `DATABASE_URL` ya escrito en la sintaxis correcta para ese driver, por ejemplo:
 
   ```sh
   # --driver=postgres
   DATABASE_URL=postgres://CHANGE_USER:CHANGE_PASSWORD@CHANGE_HOST:5432/CHANGE_DATABASE?sslmode=disable
 
-  # --driver=mariadb (or --driver=mysql)
+  # --driver=mariadb (o --driver=mysql)
   DATABASE_URL=CHANGE_USER:CHANGE_PASSWORD@tcp(CHANGE_HOST:3306)/CHANGE_DATABASE?parseTime=true
   ```
 
-  PostgreSQL and MariaDB use unrelated DSN syntaxes (a URL vs.
-  `go-sql-driver/mysql`'s own format), which is exactly why `init` writes it
-  out for you instead of leaving you to look it up. Replace the `CHANGE_*`
-  placeholders with your real credentials — `.env` is already in
-  `.gitignore` and is never committed.
+  PostgreSQL y MariaDB usan sintaxis de DSN no relacionadas (una URL frente al
+  formato propio de `go-sql-driver/mysql`), que es exactamente el motivo por el
+  que `init` te lo escribe en lugar de dejar que lo busques. Sustituye los
+  marcadores `CHANGE_*` por tus credenciales reales — `.env` ya está en
+  `.gitignore` y nunca se commitea.
 
-Every driver GoForge supports — canonical name, aliases, human label, and
-example DSN — is defined in one place: `internal/providers`. Nothing else in
-the codebase hardcodes the list.
+Cada driver que GoForge soporta — nombre canónico, alias, etiqueta legible y DSN
+de ejemplo — está definido en un solo lugar: `internal/providers`. Ningún otro
+punto del código fija la lista a mano.
 
-## Configuration and credentials
+## Configuración y credenciales
 
 `goforge.yaml`:
 
 ```yaml
 database:
-  driver: postgres   # postgres, mariadb, or an alias (postgresql, pg, mysql)
+  driver: postgres   # postgres, mariadb, o un alias (postgresql, pg, mysql)
   url: ${DATABASE_URL}
 
 migrations:
   path: ./migrations
 ```
 
-`${VAR}` references in `goforge.yaml` are resolved, in order, from:
+Las referencias `${VAR}` en `goforge.yaml` se resuelven, en este orden, desde:
 
-1. A variable already exported in the environment (e.g. by your shell, CI,
-   or orchestrator) — takes precedence over `.env`.
-2. A `.env` file next to `goforge.yaml` (auto-loaded, optional, git-ignored)
-   — or wherever `--env-file <path>` points instead, if you don't want it
-   next to `goforge.yaml` (e.g. `secrets/db.env`, a path managed by your
-   secrets tooling, etc.). `goforge init` also respects `--env-file`: it
-   scaffolds the starter `.env` (with the `CHANGE_*` placeholders) at that
-   path instead of the default location, creating parent directories as
-   needed.
-3. A literal value written directly in `goforge.yaml` — works, but not
-   recommended: that file is meant to be committed.
+1. Una variable ya exportada en el entorno (por tu shell, tu CI o tu
+   orquestador) — tiene prioridad sobre `.env`.
+2. Un archivo `.env` junto a `goforge.yaml` (se carga automáticamente, es
+   opcional y está en `.gitignore`) — o donde apunte `--env-file <ruta>` en su
+   lugar, si no lo quieres junto a `goforge.yaml` (por ejemplo `secrets/db.env`,
+   una ruta gestionada por tu tooling de secretos, etc.). `goforge init` también
+   respeta `--env-file`: genera el `.env` inicial (con los marcadores `CHANGE_*`)
+   en esa ruta en vez de en la ubicación por defecto, creando los directorios
+   padre que hagan falta.
+3. Un valor literal escrito directamente en `goforge.yaml` — funciona, pero no
+   se recomienda: ese archivo está pensado para commitearse.
 
-No separate credentials file or keychain exists beyond this — it's the
-standard 12-factor pattern, chosen so the standalone CLI works in legacy
-projects without imposing its own secrets system.
+No existe ningún archivo de credenciales ni keychain aparte de esto — es el
+patrón estándar de 12 factores, elegido para que el CLI independiente funcione en
+proyectos legacy sin imponer su propio sistema de secretos.
 
-## Commands
+## Comandos
 
-Every command also accepts `--config <path>` (default `goforge.yaml`) and
-`--env-file <path>` (default: alongside `--config`, named `.env`).
+Todos los comandos aceptan además `--config <ruta>` (por defecto `goforge.yaml`)
+y `--env-file <ruta>` (por defecto: junto a `--config`, con nombre `.env`).
 
 ```
 goforge init [--driver=postgres|mariadb|mysql]
@@ -118,7 +141,7 @@ goforge migrate:status        [--json]
 goforge migrate:rollback      [--steps N] [--json]
 goforge migrate:reset         --yes
 goforge migrate:fresh         --yes
-goforge make:migration <name> [--go]
+goforge make:migration <nombre> [--go]
 goforge validate              [--json]
 goforge doctor                 [--json]
 goforge generate
@@ -126,39 +149,41 @@ goforge version
 goforge mcp
 ```
 
-Every command supports `--json` for machine-readable output.
+Todos los comandos admiten `--json` para salida legible por máquina.
 
 ## `goforge doctor`
 
-Diagnoses a project's setup end-to-end instead of making you interpret the
-first error `migrate` happens to hit. It checks, in order — each one runs
-even if an earlier one failed, except where that's genuinely impossible:
+Diagnostica la configuración de un proyecto de principio a fin en lugar de
+obligarte a interpretar el primer error que le toque encontrar a `migrate`.
+Comprueba, en este orden — cada comprobación se ejecuta aunque una anterior haya
+fallado, salvo donde eso sea genuinamente imposible:
 
-1. **Config** — `goforge.yaml` exists and parses.
-2. **`.env`** — informational: whether one was found next to `goforge.yaml`.
-3. **Migrations directory** — how many migrations were found, or why loading
-   them failed (duplicate version, missing `.up.sql`/`.down.sql` pair, etc.).
-4. **Database connection** — actually connects (bounded to 10s so an
-   unreachable host fails fast instead of hanging), and reports the real
-   server version and current database name.
-5. **Migration history** — how many are applied/pending/dirty, and runs the
-   same checksum/dirty-state validation as `goforge validate`.
-6. **Locking** — acquires and releases the migration lock
-   (`pg_advisory_lock` / `GET_LOCK`), to catch a lock left stuck by a
-   previous crashed run.
+1. **Config** — `goforge.yaml` existe y parsea.
+2. **`.env`** — informativo: si se encontró uno junto a `goforge.yaml`.
+3. **Directorio de migraciones** — cuántas migraciones se encontraron, o por qué
+   falló su carga (versión duplicada, falta el par `.up.sql`/`.down.sql`, etc.).
+4. **Conexión a la base de datos** — conecta de verdad (con un límite de 10s para
+   que un host inalcanzable falle rápido en lugar de colgarse), e informa de la
+   versión real del servidor y del nombre de la base de datos actual.
+5. **Historial de migraciones** — cuántas están aplicadas/pendientes/dirty, y
+   ejecuta la misma validación de checksum/estado dirty que `goforge validate`.
+6. **Bloqueo** — adquiere y libera el lock de migración
+   (`pg_advisory_lock` / `GET_LOCK`), para detectar un lock que se quedó
+   atascado tras una ejecución anterior que se cayó.
 
-Checks 5 and 6 are skipped (not failed) when the database connection itself
-didn't succeed. Exits non-zero if any check failed.
+Las comprobaciones 5 y 6 se omiten (no fallan) cuando la propia conexión a la
+base de datos no tuvo éxito. Sale con código distinto de cero si alguna
+comprobación falló.
 
-## Go migrations
+## Migraciones en Go
 
-The standalone CLI only executes SQL migrations directly — it never parses
-or interprets `.go` files at runtime. To use Go migrations, generate their
-registry and import the engine into your own program:
+El CLI independiente solo ejecuta migraciones SQL directamente — nunca parsea ni
+interpreta archivos `.go` en tiempo de ejecución. Para usar migraciones en Go,
+genera su registro e importa el motor dentro de tu propio programa:
 
 ```sh
 goforge make:migration --go add_computed_column
-goforge generate   # writes migrations/goforge_registry_gen.go
+goforge generate   # escribe migrations/goforge_registry_gen.go
 ```
 
 ```go
@@ -167,25 +192,25 @@ entries, _ := migration.Load(os.DirFS("./migrations"), reg)
 engine, _ := migration.NewEngine(db, provider, entries)
 ```
 
-## MCP server
+## Servidor MCP
 
 ```sh
 goforge mcp
 ```
 
-Exposes read-only tools (`goforge_status`, `goforge_migration_list`,
+Expone herramientas de solo lectura (`goforge_status`, `goforge_migration_list`,
 `goforge_migration_pending`, `goforge_migration_validate`,
-`goforge_migration_plan`) without confirmation, and mutating tools
-(`goforge_migration_up`, `goforge_migration_rollback`) that require an
-explicit `confirm: true`. It never executes arbitrary SQL.
+`goforge_migration_plan`) sin confirmación, y herramientas que mutan estado
+(`goforge_migration_up`, `goforge_migration_rollback`) que exigen un
+`confirm: true` explícito. Nunca ejecuta SQL arbitrario.
 
-## Development
+## Desarrollo
 
 ```sh
-go test ./...                                  # unit tests
-go test -tags=integration ./tests/integration/... -v   # requires Docker
+go test ./...                                  # tests unitarios
+go test -tags=integration ./tests/integration/... -v   # requiere Docker
 ```
 
-## License
+## Licencia
 
 MIT
