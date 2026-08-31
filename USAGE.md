@@ -1,91 +1,96 @@
-# GoForge — Usage
+# GoForge — Uso
 
-Reference manual for the `goforge` CLI. For the project overview and
-architecture, see [README.md](README.md).
+Manual de referencia del CLI `goforge`. Para la visión general del proyecto y
+la arquitectura, consulta [README.md](README.md).
 
-- [Install](#install)
-- [Global flags](#global-flags)
-- [Quick start](#quick-start)
-- [Commands](#commands)
-- [Configuration (`goforge.yaml`)](#configuration-goforgeyaml)
-- [Credentials (`.env`)](#credentials-env)
-- [Language (`--lang`)](#language---lang)
-- [Migration files](#migration-files)
-- [Go migrations](#go-migrations)
+- [Instalación](#instalación)
+- [Flags globales](#flags-globales)
+- [Inicio rápido](#inicio-rápido)
+- [Comandos](#comandos)
+- [Configuración (`goforge.yaml`)](#configuración-goforgeyaml)
+- [Credenciales (`.env`)](#credenciales-env)
+- [Idioma (`--lang`)](#idioma---lang)
+- [Archivos de migración](#archivos-de-migración)
+- [Migraciones en Go](#migraciones-en-go)
 - [`goforge doctor`](#goforge-doctor)
-- [MCP server](#mcp-server)
-- [Exit codes](#exit-codes)
-- [`--json` output](#--json-output)
+- [Servidor MCP](#servidor-mcp)
+- [Códigos de salida](#códigos-de-salida)
+- [Salida `--json`](#salida---json)
 
-## Install
+## Instalación
 
-Standalone binary — no PHP, Node, Python, or a Go toolchain required to run it:
+Binario independiente — no requiere PHP, Node, Python ni un toolchain de Go para
+ejecutarse:
 
 ```sh
 go install github.com/MMaZX/goforge/cmd/goforge@latest
 ```
 
-Or download a prebuilt binary + `SHA256SUMS.txt` from
-[Releases](https://github.com/MMaZX/goforge/releases) for linux/darwin/windows,
+O descarga un binario precompilado + `SHA256SUMS.txt` desde
+[Releases](https://github.com/MMaZX/goforge/releases) para linux/darwin/windows,
 amd64/arm64.
 
-As a Go module, to use the migration engine directly in your own program:
+Como módulo de Go, para usar el motor de migraciones directamente en tu propio
+programa:
 
 ```sh
 go get github.com/MMaZX/goforge
 ```
 
-## Global flags
+## Flags globales
 
-Every subcommand accepts these (they must come from the root command, i.e.
-before or after the subcommand name, standard Cobra flag parsing applies):
+Todos los subcomandos aceptan estas flags (deben ir en el comando raíz, es
+decir, antes o después del nombre del subcomando; se aplica el parseo de flags
+estándar de Cobra):
 
-| Flag | Default | Meaning |
+| Flag | Por defecto | Significado |
 |---|---|---|
-| `--config <path>` | `goforge.yaml` | Path to the config file. |
-| `--env-file <path>` | *(alongside `--config`, named `.env`)* | Path to the `.env` file. See [Credentials](#credentials-env). |
-| `--json` | `false` | Machine-readable JSON instead of human text. See [`--json` output](#--json-output). |
-| `--lang <en\|es>` | *(auto-detected)* | UI language for human output. See [Language](#language---lang). |
+| `--config <ruta>` | `goforge.yaml` | Ruta al archivo de configuración. |
+| `--env-file <ruta>` | *(junto a `--config`, con nombre `.env`)* | Ruta al archivo `.env`. Ver [Credenciales](#credenciales-env). |
+| `--json` | `false` | JSON legible por máquina en lugar de texto para humanos. Ver [Salida `--json`](#salida---json). |
+| `--lang <en\|es>` | *(autodetectado)* | Idioma de la interfaz para la salida humana. Ver [Idioma](#idioma---lang). |
 
-## Quick start
+## Inicio rápido
 
 ```sh
-goforge init --driver=postgres        # or mariadb / mysql (alias of mariadb)
+goforge init --driver=postgres        # o mariadb / mysql (alias de mariadb)
 goforge make:migration create_users
-# edit migrations/000001_create_users.{up,down}.sql
-# edit .env: fill in the CHANGE_* placeholders goforge init generated
+# edita migrations/000001_create_users.{up,down}.sql
+# edita .env: rellena los marcadores CHANGE_* que goforge init generó
 goforge migrate
 goforge migrate:status
 ```
 
-## Commands
+## Comandos
 
 ### `goforge init`
 
-Creates `goforge.yaml`, `./migrations`, and (if one doesn't already exist) a
-starter `.env` with a ready-to-edit `DATABASE_URL` in the correct syntax for
-the driver you chose.
+Crea `goforge.yaml`, `./migrations` y (si no existe ya) un `.env` inicial con un
+`DATABASE_URL` listo para editar en la sintaxis correcta para el driver que
+elegiste.
 
 ```sh
-goforge init --driver=postgres|mariadb|mysql   # default: postgres
+goforge init --driver=postgres|mariadb|mysql   # por defecto: postgres
 ```
 
-Fails if `--config` already points to an existing file. Never overwrites an
-existing `.env` — if one is already there, it's left untouched and the CLI
-tells you so.
+Falla si `--config` ya apunta a un archivo existente. Nunca sobrescribe un
+`.env` existente — si ya hay uno, lo deja intacto y el CLI te lo indica.
 
 ### `goforge migrate`
 
-Applies every pending migration, in ascending version order. In interactive terminal sessions, it displays the pending migrations and asks for confirmation (`si` in Spanish, `yes` in English, strictly lowercase). Use `--yes` / `-y` to bypass confirmation in CI/CD or automation.
+Aplica todas las migraciones pendientes, en orden ascendente de versión. En
+sesiones de terminal interactivas, muestra las migraciones pendientes y pide
+confirmación (`si` en español, `yes` en inglés, estrictamente en minúsculas).
+Usa `--yes` / `-y` para saltarte la confirmación en CI/CD o automatización.
 
 ```sh
-goforge migrate [--steps N] [--yes]   # 0 (default) = all pending
+goforge migrate [--steps N] [--yes]   # 0 (por defecto) = todas las pendientes
 ```
 
 ### `goforge migrate:status`
 
-Lists every known migration and whether it's applied, its batch, and
-whether it's flagged dirty.
+Lista todas las migraciones conocidas y si están aplicadas, su batch, y si
+están marcadas como dirty.
 
 ```sh
 goforge migrate:status [--json]
@@ -93,16 +98,21 @@ goforge migrate:status [--json]
 
 ### `goforge migrate:rollback`
 
-Reverts the most recently applied batch, or the last N applied migrations
-overall with `--steps`. In interactive terminal sessions, it shows a destructive warning and requires **two consecutive confirmations** (`[1/2]` and `[2/2]`, typing `si` or `yes`). Use `--yes` / `-y` to bypass confirmation.
+Revierte el último batch aplicado, o las últimas N migraciones aplicadas en
+total con `--steps`. En sesiones de terminal interactivas, muestra una
+advertencia destructiva y exige **dos confirmaciones consecutivas** (`[1/2]` y
+`[2/2]`, escribiendo `si` o `yes`). Usa `--yes` / `-y` para saltarte la
+confirmación.
 
 ```sh
-goforge migrate:rollback [--steps N] [--yes]   # 0 (default) = last batch
+goforge migrate:rollback [--steps N] [--yes]   # 0 (por defecto) = último batch
 ```
 
 ### `goforge migrate:reset`
 
-Reverts **every** applied migration. Destructive — prompts for **two consecutive confirmations** in interactive sessions, or requires `--yes` / `-y` in non-interactive/CI environments.
+Revierte **todas** las migraciones aplicadas. Destructivo — pide **dos
+confirmaciones consecutivas** en sesiones interactivas, o requiere `--yes` /
+`-y` en entornos no interactivos / CI.
 
 ```sh
 goforge migrate:reset [--yes]
@@ -110,18 +120,19 @@ goforge migrate:reset [--yes]
 
 ### `goforge migrate:fresh`
 
-Reverts every applied migration and re-applies them all from scratch.
-Destructive — prompts for **two consecutive confirmations** in interactive sessions, or requires `--yes` / `-y` in non-interactive/CI environments.
+Revierte todas las migraciones aplicadas y las vuelve a aplicar desde cero.
+Destructivo — pide **dos confirmaciones consecutivas** en sesiones
+interactivas, o requiere `--yes` / `-y` en entornos no interactivos / CI.
 
 ```sh
 goforge migrate:fresh [--yes]
 ```
 
-### `goforge make:migration <name>`
+### `goforge make:migration <nombre>`
 
-Creates the next-numbered migration. SQL by default (a `.up.sql`/`.down.sql`
-pair); `--go` creates a Go migration stub instead (see
-[Go migrations](#go-migrations)).
+Crea la siguiente migración numerada. SQL por defecto (un par
+`.up.sql`/`.down.sql`); `--go` crea en su lugar un stub de migración en Go (ver
+[Migraciones en Go](#migraciones-en-go)).
 
 ```sh
 goforge make:migration create_users
@@ -130,9 +141,10 @@ goforge make:migration add_computed_column --go
 
 ### `goforge validate`
 
-Verifies checksums of applied migrations and detects dirty (interrupted)
-state, without changing anything. Same checks `goforge doctor` runs as part
-of its "Migration history" check.
+Verifica los checksums de las migraciones aplicadas y detecta estado dirty
+(interrumpido), sin cambiar nada. Son las mismas comprobaciones que
+`goforge doctor` ejecuta como parte de su comprobación de "Historial de
+migraciones".
 
 ```sh
 goforge validate [--json]
@@ -140,10 +152,11 @@ goforge validate [--json]
 
 ### `goforge generate`
 
-Scans `./migrations` for Go migration files and (re)writes
-`migrations/goforge_registry_gen.go`, registering each one with its
-checksum. Static, source-level discovery only — never interprets `.go`
-files at runtime. See [Go migrations](#go-migrations).
+Escanea `./migrations` en busca de archivos de migración en Go y (re)escribe
+`migrations/goforge_registry_gen.go`, registrando cada uno con su checksum.
+Descubrimiento estático, a nivel de código fuente únicamente — nunca interpreta
+archivos `.go` en tiempo de ejecución. Ver
+[Migraciones en Go](#migraciones-en-go).
 
 ```sh
 goforge generate
@@ -151,7 +164,8 @@ goforge generate
 
 ### `goforge doctor`
 
-Diagnoses the whole setup in one shot. See [`goforge doctor`](#goforge-doctor).
+Diagnostica toda la configuración de una sola vez. Ver
+[`goforge doctor`](#goforge-doctor).
 
 ```sh
 goforge doctor [--json]
@@ -165,109 +179,126 @@ goforge version [--json]
 
 ### `goforge mcp`
 
-Runs the MCP server over stdio, for AI agents. See [MCP server](#mcp-server).
+Ejecuta el servidor MCP sobre stdio, para agentes de IA. Ver
+[Servidor MCP](#servidor-mcp).
 
 ```sh
 goforge mcp
 ```
 
-## Configuration (`goforge.yaml`)
+## Configuración (`goforge.yaml`)
 
 ```yaml
 database:
-  driver: postgres   # postgres, mariadb, or an alias (postgresql, pg, mysql)
+  driver: postgres   # postgres, mariadb, o un alias (postgresql, pg, mysql)
   url: ${DATABASE_URL}
 
 migrations:
   path: ./migrations
 
-language: es   # optional; see Language below
+language: es   # opcional; ver Idioma más abajo
 ```
 
-`driver` and `url` are required; `migrations.path` defaults to `./migrations`
-if omitted. `${VAR}` references are expanded against the process
-environment, after `.env` has been loaded (see below) — never write a real
-credential directly in this file, since it's meant to be committed.
+`driver` y `url` son obligatorios; `migrations.path` toma el valor por defecto
+`./migrations` si se omite. Las referencias `${VAR}` se expanden contra el
+entorno del proceso, después de haber cargado `.env` (ver más abajo) — nunca
+escribas una credencial real directamente en este archivo, ya que está pensado
+para commitearse.
 
-## Credentials (`.env`)
+## Credenciales (`.env`)
 
-`${VAR}` references in `goforge.yaml` resolve, in order:
+Las referencias `${VAR}` en `goforge.yaml` se resuelven, en este orden:
 
-1. A variable already exported in the environment (shell, CI, orchestrator)
-   — wins over `.env`.
-2. A `.env` file — by default next to `goforge.yaml`, named `.env`; or
-   wherever `--env-file <path>` points instead, if you want it somewhere
-   else (e.g. `secrets/db.env`, a path your secrets tooling manages).
-   `goforge init` respects `--env-file` too: it scaffolds the starter `.env`
-   there, creating parent directories as needed.
-3. A literal value written directly in `goforge.yaml` — works, but not
-   recommended.
+1. Una variable ya exportada en el entorno (shell, CI, orquestador) — gana
+   sobre `.env`.
+2. Un archivo `.env` — por defecto junto a `goforge.yaml`, con nombre `.env`; o
+   donde apunte `--env-file <ruta>` en su lugar, si lo quieres en otro sitio
+   (por ejemplo `secrets/db.env`, una ruta que gestione tu tooling de secretos).
+   `goforge init` también respeta `--env-file`: genera ahí el `.env` inicial,
+   creando los directorios padre que hagan falta.
+3. Un valor literal escrito directamente en `goforge.yaml` — funciona, pero no
+   se recomienda.
 
-No separate credentials file or keychain exists beyond this — standard
-12-factor pattern, so the standalone binary works in legacy projects without
-imposing its own secrets system. `.env` is never read or written outside of
-this resolution; GoForge has no other place it looks for secrets.
+No existe ningún archivo de credenciales ni keychain aparte de esto — patrón
+estándar de 12 factores, para que el binario independiente funcione en proyectos
+legacy sin imponer su propio sistema de secretos. `.env` nunca se lee ni se
+escribe fuera de esta resolución; GoForge no tiene ningún otro lugar donde
+busque secretos.
 
-Example `.env` for each driver (exactly what `goforge init` generates, with
-placeholders to replace):
+Ejemplo de `.env` para cada driver (exactamente lo que genera `goforge init`,
+con marcadores para reemplazar):
 
 ```sh
 # --driver=postgres
 DATABASE_URL=postgres://CHANGE_USER:CHANGE_PASSWORD@CHANGE_HOST:5432/CHANGE_DATABASE?sslmode=disable
 
-# --driver=mariadb (or --driver=mysql)
+# --driver=mariadb (o --driver=mysql)
 DATABASE_URL=CHANGE_USER:CHANGE_PASSWORD@tcp(CHANGE_HOST:3306)/CHANGE_DATABASE?parseTime=true
 ```
 
-## Language (`--lang`)
+## Idioma (`--lang`)
 
-Human-readable output (headers, status table, confirmation prompts, error
-messages GoForge itself prints) is available in English and Spanish.
-Resolved once at startup, first match wins:
+La salida legible por humanos (cabeceras, tabla de estado, prompts de
+confirmación, mensajes de error que imprime el propio GoForge) está disponible
+en inglés y español. Se resuelve una sola vez al arrancar; gana la primera
+coincidencia:
 
 1. `--lang en|es`
-2. `GOFORGE_LANG` environment variable
-3. `language:` in `goforge.yaml`
-4. `LC_ALL`, then `LANG` (system locale, e.g. `es_PE.UTF-8` → `es`)
-5. English, if nothing above matched
+2. Variable de entorno `GOFORGE_LANG`
+3. `language:` en `goforge.yaml`
+4. `LC_ALL`, luego `LANG` (locale del sistema, p. ej. `es_PE.UTF-8` → `es`)
+5. Inglés, si nada de lo anterior coincidió
 
-A key missing from the Spanish catalog falls back to English rather than
-breaking. **Not translated, on purpose:** `--json` output, Cobra's own
-`--help`/usage text, engine errors from `migration/`, and migration
-names/paths — these stay in English so they remain a stable, greppable
-contract for scripts, logs, and machine consumers regardless of `--lang`.
+Una clave que falte en el catálogo español recae en inglés en lugar de romper.
+**No se traduce, a propósito:** la salida `--json`, el texto de
+`--help`/uso propio de Cobra, los errores del motor en `migration/`, y los
+nombres/rutas de migraciones — se mantienen en inglés para que sigan siendo un
+contrato estable y grepeable para scripts, logs y consumidores máquina, sin
+importar `--lang`.
 
-## Confirmations and Terminal Output
+## Confirmaciones y salida de terminal
 
-- **Strict lowercase validation**: Interactive prompts require typing exactly `si` (in Spanish) or `yes` (in English). Any uppercase input (`SI`, `YES`), mixed case, or whitespace will cancel the operation.
-- **Double confirmation**: Destructive commands (`migrate:rollback`, `migrate:reset`, `migrate:fresh`) ask for confirmation twice (`[1/2]` and `[2/2]`).
-- **Non-interactive environments (CI/CD)**: Running modifying commands without a TTY requires passing `--yes` (or `-y`), otherwise the command fails safely with an error.
-- **Color support and `NO_COLOR`**: Output uses lightweight ANSI colors to highlight danger warnings and statuses. If the `NO_COLOR` environment variable is present or stdout is not a TTY, color escape codes are automatically disabled.
+- **Validación estricta en minúsculas**: los prompts interactivos exigen
+  escribir exactamente `si` (en español) o `yes` (en inglés). Cualquier entrada
+  en mayúsculas (`SI`, `YES`), mayúsculas y minúsculas mezcladas, o espacios en
+  blanco cancelará la operación.
+- **Doble confirmación**: los comandos destructivos (`migrate:rollback`,
+  `migrate:reset`, `migrate:fresh`) piden confirmación dos veces (`[1/2]` y
+  `[2/2]`).
+- **Entornos no interactivos (CI/CD)**: ejecutar comandos que modifican estado
+  sin un TTY requiere pasar `--yes` (o `-y`); de lo contrario el comando falla
+  de forma segura con un error.
+- **Soporte de color y `NO_COLOR`**: la salida usa colores ANSI ligeros para
+  resaltar advertencias de peligro y estados. Si la variable de entorno
+  `NO_COLOR` está presente o stdout no es un TTY, los códigos de escape de color
+  se desactivan automáticamente.
 
-## Migration files
+## Archivos de migración
 
-SQL migrations, discovered directly under `migrations.path`:
+Migraciones SQL, descubiertas directamente bajo `migrations.path`:
 
 ```
 000001_create_users.up.sql
 000001_create_users.down.sql
 ```
 
-Both files are required for a given version. The SQL inside is executed
-exactly as written — GoForge never rewrites or translates it between
-drivers; statements are split on a semicolon at the end of a line.
+Ambos archivos son obligatorios para una versión dada. El SQL de dentro se
+ejecuta exactamente como está escrito — GoForge nunca lo reescribe ni lo traduce
+entre drivers; las sentencias se separan por un punto y coma al final de una
+línea.
 
-## Go migrations
+## Migraciones en Go
 
-The standalone CLI **only** executes SQL migrations directly — it never
-parses or interprets `.go` files at runtime. To use Go migrations:
+El CLI independiente **solo** ejecuta migraciones SQL directamente — nunca
+parsea ni interpreta archivos `.go` en tiempo de ejecución. Para usar
+migraciones en Go:
 
 ```sh
 goforge make:migration add_computed_column --go
-goforge generate   # writes migrations/goforge_registry_gen.go
+goforge generate   # escribe migrations/goforge_registry_gen.go
 ```
 
-Then, in your own program (not the standalone CLI):
+Después, en tu propio programa (no en el CLI independiente):
 
 ```go
 reg, _ := migrations.Registry()
@@ -277,27 +308,29 @@ engine, _ := migration.NewEngine(db, provider, entries)
 
 ## `goforge doctor`
 
-Runs 6 checks, each reported even if an earlier one failed (except where
-that's genuinely impossible), instead of making you interpret the first
-error `migrate` happens to hit:
+Ejecuta 6 comprobaciones, cada una reportada aunque una anterior haya fallado
+(salvo donde eso sea genuinamente imposible), en lugar de obligarte a
+interpretar el primer error que le toque encontrar a `migrate`:
 
-1. **Config** — `goforge.yaml` exists and parses. If this fails, nothing
-   else runs.
-2. **`.env`** — informational: whether one was found, and where.
-3. **Migrations directory** — how many migrations were found, or why
-   loading them failed (duplicate version, missing `.up.sql`/`.down.sql`
-   pair, etc.).
-4. **Database connection** — actually connects, bounded to 10s so an
-   unreachable host fails fast instead of hanging; reports the real server
-   version and current database name on success.
-5. **Migration history** — counts applied/pending/dirty, and runs the same
-   checksum/dirty-state validation as `goforge validate`. Skipped if the
-   connection or the migrations directory failed.
-6. **Locking** — acquires and releases the migration lock
-   (`pg_advisory_lock` / `GET_LOCK`), catching a lock a previous crashed run
-   left stuck. Skipped if the connection failed.
+1. **Config** — `goforge.yaml` existe y parsea. Si esto falla, no se ejecuta
+   nada más.
+2. **`.env`** — informativo: si se encontró uno, y dónde.
+3. **Directorio de migraciones** — cuántas migraciones se encontraron, o por
+   qué falló su carga (versión duplicada, falta el par `.up.sql`/`.down.sql`,
+   etc.).
+4. **Conexión a la base de datos** — conecta de verdad, con un límite de 10s
+   para que un host inalcanzable falle rápido en lugar de colgarse; en caso de
+   éxito informa de la versión real del servidor y del nombre de la base de
+   datos actual.
+5. **Historial de migraciones** — cuenta aplicadas/pendientes/dirty, y ejecuta
+   la misma validación de checksum/estado dirty que `goforge validate`. Se omite
+   si la conexión o el directorio de migraciones fallaron.
+6. **Bloqueo** — adquiere y libera el lock de migración
+   (`pg_advisory_lock` / `GET_LOCK`), detectando un lock que una ejecución
+   anterior que se cayó dejó atascado. Se omite si la conexión falló.
 
-Exits non-zero if any check failed (skipped checks don't count as failures).
+Sale con código distinto de cero si alguna comprobación falló (las
+comprobaciones omitidas no cuentan como fallos).
 
 ```sh
 goforge doctor
@@ -305,15 +338,15 @@ goforge doctor --json
 goforge doctor --env-file=secrets/db.env
 ```
 
-## MCP server
+## Servidor MCP
 
 ```sh
 goforge mcp
 ```
 
-stdio transport, using the official Go MCP SDK. Exposes the same
-`migration.Engine` the CLI uses — identical locking, checksum, and
-transaction guarantees. Read-only tools need no confirmation:
+Transporte stdio, usando el SDK oficial de MCP para Go. Expone el mismo
+`migration.Engine` que usa el CLI — idénticas garantías de locking, checksum y
+transacción. Las herramientas de solo lectura no necesitan confirmación:
 
 - `goforge_status`
 - `goforge_migration_list`
@@ -321,34 +354,36 @@ transaction guarantees. Read-only tools need no confirmation:
 - `goforge_migration_validate`
 - `goforge_migration_plan`
 
-Schema-modifying tools require an explicit `confirm: true` argument,
-enforced by both the JSON Schema (`confirm` is a required field) and the
-handler:
+Las herramientas que modifican el esquema requieren un argumento explícito
+`confirm: true`, exigido tanto por el JSON Schema (`confirm` es un campo
+obligatorio) como por el handler:
 
 - `goforge_migration_up`
 - `goforge_migration_rollback`
 
-No tool executes arbitrary SQL — there is no path for an agent to run
-`DROP DATABASE`, `TRUNCATE`, or any equivalent; every operation goes through
-the migration engine's own reviewed migrations.
+Ninguna herramienta ejecuta SQL arbitrario — no hay ningún camino para que un
+agente ejecute `DROP DATABASE`, `TRUNCATE` ni nada equivalente; cada operación
+pasa por las migraciones revisadas del propio motor de migraciones.
 
-## Exit codes
+## Códigos de salida
 
-| Code | Meaning |
+| Código | Significado |
 |---|---|
-| `0` | Success. |
-| `1` | The operation failed (migration error, etc.). |
-| `2` | Configuration/setup problem (missing or invalid `goforge.yaml`, bad `--driver`, connection failure before even attempting the operation). |
+| `0` | Éxito. |
+| `1` | La operación falló (error de migración, etc.). |
+| `2` | Problema de configuración/setup (`goforge.yaml` ausente o inválido, `--driver` incorrecto, fallo de conexión antes siquiera de intentar la operación). |
 
-`goforge doctor` is the one exception: it always exits `1` when any check
-failed — including a missing `goforge.yaml` — since a failed check is its
-normal, expected way of reporting a problem, not a usage error.
+`goforge doctor` es la única excepción: siempre sale con `1` cuando alguna
+comprobación falló — incluido un `goforge.yaml` ausente — ya que una
+comprobación fallida es su forma normal y esperada de reportar un problema, no
+un error de uso.
 
-## `--json` output
+## Salida `--json`
 
-Every command accepts `--json` for a structured, single JSON object on
-stdout — stable regardless of `--lang`, meant for scripts and agents. Logs
-and diagnostics go to stderr, never mixed into the JSON stream. Example:
+Todos los comandos aceptan `--json` para obtener un único objeto JSON
+estructurado en stdout — estable sin importar `--lang`, pensado para scripts y
+agentes. Los logs y diagnósticos van a stderr, nunca mezclados en el flujo
+JSON. Ejemplo:
 
 ```sh
 $ goforge migrate:status --json
