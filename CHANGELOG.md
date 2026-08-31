@@ -7,26 +7,6 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
-### Añadido
-
-- `CONTRIBUTING.md` con el flujo de contribución, las comprobaciones que
-  exige la CI y las convenciones de commits.
-- Sección «¿Por qué GoForge y no otro?» en el README, comparándolo con
-  otros migradores del ecosistema Go.
-
-### Cambiado
-
-- `README.md` y `USAGE.md` traducidos al español. Los nombres de comandos,
-  flags, claves de configuración, salida `--json` y ejemplos de código se
-  mantienen en inglés como contrato estable para scripts y agentes.
-- Los helpers de color del CLI pasan de primitivas de color
-  (`Red`/`Green`/`Yellow`/…) a roles semánticos (`Success`, `Danger`,
-  `DangerBold`, `Warning`, `Accent`, `Muted`), con insignias
-  (`SuccessBadge` / `DangerBadge`) para el veredicto de una ejecución.
-- El color solo se emite cuando stdout es una terminal real, además de
-  respetar `NO_COLOR` y `TERM=dumb`; la salida redirigida ya no filtra
-  códigos ANSI.
-
 ## [0.1.0] - 2026-08-31
 
 Primera versión pública de GoForge: migraciones de base de datos portables
@@ -75,6 +55,10 @@ MCP.
   `GOFORGE_LANG`, `language:` en `goforge.yaml` o el locale del sistema.
   La salida `--json`, los errores del motor y los nombres de migraciones
   se quedan en inglés a propósito.
+- **Salida de terminal con color** mediante roles semánticos (`Success`,
+  `Danger`, `Warning`, `Accent`, `Muted`) e insignias para el veredicto de
+  una ejecución. El color solo se emite cuando stdout es una terminal
+  real, además de respetar `NO_COLOR` y `TERM=dumb`.
 - **Salida `--json`** en todos los comandos: un único objeto JSON en
   stdout, estable sin importar `--lang`, con logs y diagnósticos siempre en
   stderr.
@@ -91,6 +75,12 @@ MCP.
   Ninguna herramienta ejecuta SQL arbitrario.
 - **Migraciones en Go** embebibles en tu propio programa a través de
   `migrations.Registry()` + `migration.Load` + `migration.NewEngine`.
+- **Documentación** en español: `README.md` (visión general, propósito y
+  comparación con otros migradores) y `USAGE.md` (manual de referencia del
+  CLI). Los nombres de comandos, flags, claves de configuración, salida
+  `--json` y ejemplos de código se mantienen en inglés como contrato
+  estable para scripts y agentes. `CONTRIBUTING.md` con el flujo de
+  contribución y las comprobaciones que exige la CI.
 - **CI** (GitHub Actions): `go build`, `go vet`, `gofmt`, `go test`, tests
   de integración con Docker (PostgreSQL y MariaDB), y build multiplataforma
   para linux/darwin/windows en amd64/arm64.
