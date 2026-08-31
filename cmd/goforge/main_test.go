@@ -145,4 +145,3 @@ func TestResetAndFreshRequireYesInNonInteractive(t *testing.T) {
 		}
 	})
 }
-
