@@ -46,6 +46,24 @@ manipulación (checksum que no coincide) o una caída a mitad de una migración
 
 Referencia completa de comandos, flags y ejemplos: [USAGE.md](USAGE.md).
 
+## ¿Por qué GoForge y no otro?
+
+Existen muchos migradores para Go. GoForge tiene sentido cuando valoras
+alguna de estas cosas:
+
+| | GoForge |
+|---|---|
+| **Sintaxis** | Comandos tipo Laravel: `migrate`, `migrate:rollback`, `migrate:fresh`, `make:migration`. Familiar desde el primer minuto si vienes de `artisan`. |
+| **Distribución** | Un único binario estático, sin dependencias de runtime. Se deja caer en un proyecto PHP, un script, un contenedor, un CI, lo que sea. |
+| **Proyectos legacy** | Pensado para entrar en un proyecto que *no* tiene migrador, sin imponer un framework ni un sistema de secretos propio (usa `.env` de 12 factores). |
+| **Doble uso** | El mismo motor como CLI **y** como módulo de Go embebible (`migration.Engine`), con migraciones en SQL o en Go. |
+| **Agentes de IA** | Servidor MCP integrado (`goforge mcp`): un agente puede consultar estado y aplicar migraciones de forma acotada, sin poder ejecutar SQL arbitrario. |
+| **Seguridad de datos** | Se niega a ejecutar ante checksum alterado o estado *dirty* de una caída previa; bloqueo por `pg_advisory_lock` / `GET_LOCK`. |
+
+Si ya usas `golang-migrate`, `goose` o `atlas` y te funcionan, no hay razón
+para cambiar. GoForge no compite en features de esquema declarativo ni en
+número de motores soportados (por ahora, solo PostgreSQL y MariaDB).
+
 ## Instalación
 
 Como binario independiente — no requiere PHP, Node ni un runtime de Go para
