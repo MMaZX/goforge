@@ -46,3 +46,42 @@ func TestPrintStatusHumanGolden(t *testing.T) {
 		}
 	})
 }
+
+func TestPrintStatusHumanColored(t *testing.T) {
+	SetColorEnabled(true)
+	defer SetColorEnabled(false)
+
+	i18n.SetLanguage("en")
+	t.Cleanup(func() { i18n.SetLanguage("en") })
+
+	rows := []StatusRow{
+		{Version: 1, Name: "create_users", Applied: true, Batch: 1},
+		{Version: 2, Name: "add_emails", Applied: false},
+		{Version: 3, Name: "index_emails", Applied: true, Batch: 2, Dirty: true},
+	}
+	var buf bytes.Buffer
+	PrintStatusHuman(&buf, rows)
+	got := buf.String()
+
+	if !strings.Contains(got, Success("✓ applied (batch 1)")) {
+		t.Errorf("expected the applied row in Success, got:\n%s", got)
+	}
+	if !strings.Contains(got, Muted("✗ pending")) {
+		t.Errorf("expected the pending row in Muted, not Danger despite its ✗ glyph, got:\n%s", got)
+	}
+	if !strings.Contains(got, Danger("✓ applied (batch 2) [DIRTY]")) {
+		t.Errorf("expected the dirty row in Danger, got:\n%s", got)
+	}
+}
+
+func TestPrintExecutedHumanColored(t *testing.T) {
+	SetColorEnabled(true)
+	defer SetColorEnabled(false)
+
+	var buf bytes.Buffer
+	PrintExecutedHuman(&buf, []ExecutedMigration{{Version: 1, Name: "create_users"}})
+	want := Success("✓") + " 000001_create_users\n"
+	if got := buf.String(); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

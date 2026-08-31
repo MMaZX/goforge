@@ -29,7 +29,7 @@ func newValidateCmd(flags *globalFlags) *cobra.Command {
 			if flags.json {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok"})
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), i18n.T("validate.ok"))
+			fmt.Fprintln(cmd.OutOrStdout(), cliutil.Success(i18n.T("validate.ok")))
 			return nil
 		},
 	}

@@ -52,7 +52,7 @@ func newRollbackCmd(flags *globalFlags) *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprint(cmd.OutOrStdout(), cliutil.BoldYellow(i18n.T("confirm.rollback.warning")))
+				fmt.Fprint(cmd.OutOrStdout(), cliutil.Warning(i18n.T("confirm.rollback.warning")))
 
 				statusEntries, _ := engine.Status(cmd.Context())
 				batchNum := 0
@@ -65,17 +65,17 @@ func newRollbackCmd(flags *globalFlags) *cobra.Command {
 
 				fmt.Fprint(cmd.OutOrStdout(), cliutil.Bold(i18n.Tn("confirm.rollback.header", len(plan), batchNum)))
 				for _, entry := range plan {
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s %06d_%s\n", cliutil.Yellow("<"), entry.Version(), entry.Name())
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s %06d_%s\n", cliutil.Warning("<"), entry.Version(), entry.Name())
 				}
 				fmt.Fprintln(cmd.OutOrStdout())
 
 				expected := i18n.T("confirm.word")
-				step1 := i18n.T("confirm.rollback.step1") + cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
-				step2 := "\n" + cliutil.BoldRed(fmt.Sprintf(i18n.T("confirm.rollback.step2"), expected))
+				step1 := i18n.T("confirm.rollback.step1") + cliutil.Warning(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
+				step2 := "\n" + cliutil.DangerBold(fmt.Sprintf(i18n.T("confirm.rollback.step2"), expected))
 
 				ok, err := cliutil.PromptConfirmation(cmd.InOrStdin(), cmd.OutOrStdout(), []string{step1, step2}, expected)
 				if err != nil || !ok {
-					fmt.Fprint(cmd.OutOrStdout(), cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
+					fmt.Fprint(cmd.OutOrStdout(), cliutil.Warning(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
 					return nil
 				}
 				fmt.Fprintln(cmd.OutOrStdout())
@@ -101,7 +101,7 @@ func newRollbackCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("rollback.done", len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), cliutil.SuccessBadgeLine(i18n.Tn("rollback.done", len(executed))))
 			return nil
 		},
 	}

@@ -36,14 +36,14 @@ func newResetCmd(flags *globalFlags) *cobra.Command {
 			}
 
 			if !yes {
-				fmt.Fprint(cmd.OutOrStdout(), cliutil.BoldRed(i18n.T("confirm.reset.warning")))
+				fmt.Fprint(cmd.OutOrStdout(), cliutil.DangerBold(i18n.T("confirm.reset.warning")))
 				expected := i18n.T("confirm.word")
-				step1 := i18n.T("confirm.reset.step1") + cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
-				step2 := "\n" + cliutil.BoldRed(fmt.Sprintf(i18n.T("confirm.reset.step2"), expected))
+				step1 := i18n.T("confirm.reset.step1") + cliutil.Warning(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
+				step2 := "\n" + cliutil.DangerBold(fmt.Sprintf(i18n.T("confirm.reset.step2"), expected))
 
 				ok, err := cliutil.PromptConfirmation(cmd.InOrStdin(), cmd.OutOrStdout(), []string{step1, step2}, expected)
 				if err != nil || !ok {
-					fmt.Fprint(cmd.OutOrStdout(), cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
+					fmt.Fprint(cmd.OutOrStdout(), cliutil.Warning(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
 					return nil
 				}
 				fmt.Fprintln(cmd.OutOrStdout())
@@ -66,7 +66,7 @@ func newResetCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("reset.done", len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), cliutil.SuccessBadgeLine(i18n.Tn("reset.done", len(executed))))
 			return nil
 		},
 	}

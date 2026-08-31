@@ -122,21 +122,40 @@ func TestColorHelpers(t *testing.T) {
 	SetColorEnabled(true)
 	defer SetColorEnabled(false)
 
-	if !strings.Contains(Red("danger"), "\033[31m") {
-		t.Errorf("Red did not contain ANSI code")
+	if !strings.Contains(Danger("fail"), "\033[31m") {
+		t.Errorf("Danger did not contain ANSI code")
 	}
-	if !strings.Contains(BoldRed("danger"), "\033[1;31m") {
-		t.Errorf("BoldRed did not contain ANSI code")
+	if !strings.Contains(DangerBold("fail"), "\033[1;31m") {
+		t.Errorf("DangerBold did not contain ANSI code")
 	}
-	if !strings.Contains(Yellow("warning"), "\033[33m") {
-		t.Errorf("Yellow did not contain ANSI code")
+	if !strings.Contains(Warning("caution"), "\033[33m") {
+		t.Errorf("Warning did not contain ANSI code")
 	}
-	if !strings.Contains(Green("ok"), "\033[32m") {
-		t.Errorf("Green did not contain ANSI code")
+	if !strings.Contains(Success("ok"), "\033[32m") {
+		t.Errorf("Success did not contain ANSI code")
+	}
+	if !strings.Contains(Muted("secondary"), "\033[2m") {
+		t.Errorf("Muted did not contain ANSI code")
+	}
+	if !strings.Contains(Accent(">"), "\033[38;2;196;160;245m") {
+		t.Errorf("Accent did not contain the exact true-color accent code")
+	}
+
+	if got := SuccessBadge("All checks passed."); !strings.Contains(got, "\033[30;42m") || !strings.Contains(got, " All checks passed. ") {
+		t.Errorf("SuccessBadge did not render a padded green pill, got %q", got)
+	}
+	if got := DangerBadge("Some checks failed."); !strings.Contains(got, "\033[97;41m") || !strings.Contains(got, " Some checks failed. ") {
+		t.Errorf("DangerBadge did not render a padded red pill, got %q", got)
+	}
+	if got := SuccessBadgeLine("\n3 migrations applied successfully.\n"); got != "\n"+SuccessBadge("3 migrations applied successfully.")+"\n" {
+		t.Errorf("SuccessBadgeLine did not trim surrounding blank lines before badging, got %q", got)
 	}
 
 	SetColorEnabled(false)
-	if Red("danger") != "danger" {
-		t.Errorf("Red should not colorize when disabled, got %q", Red("danger"))
+	if Danger("fail") != "fail" {
+		t.Errorf("Danger should not colorize when disabled, got %q", Danger("fail"))
+	}
+	if SuccessBadge("ok") != "ok" {
+		t.Errorf("SuccessBadge should not add padding/background when disabled, got %q", SuccessBadge("ok"))
 	}
 }

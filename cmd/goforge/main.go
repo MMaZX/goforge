@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, i18n.T("app.error"), err)
+		fmt.Fprintf(os.Stderr, i18n.T("app.error"), cliutil.Danger(err.Error()))
 		var cfgErr *cliutil.ConfigError
 		if errors.As(err, &cfgErr) {
 			os.Exit(2)

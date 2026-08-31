@@ -54,15 +54,15 @@ func newMigrateCmd(flags *globalFlags) *cobra.Command {
 			if !yes {
 				fmt.Fprint(cmd.OutOrStdout(), cliutil.Bold(i18n.Tn("confirm.migrate.header", len(plan))))
 				for _, entry := range plan {
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s %06d_%s\n", cliutil.Cyan(">"), entry.Version(), entry.Name())
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s %06d_%s\n", cliutil.Accent(">"), entry.Version(), entry.Name())
 				}
 				fmt.Fprintln(cmd.OutOrStdout())
 
 				expected := i18n.T("confirm.word")
-				promptText := i18n.T("confirm.migrate.prompt") + cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
+				promptText := i18n.T("confirm.migrate.prompt") + cliutil.Warning(fmt.Sprintf(i18n.T("confirm.type_to_confirm"), expected))
 				ok, err := cliutil.PromptConfirmation(cmd.InOrStdin(), cmd.OutOrStdout(), []string{promptText}, expected)
 				if err != nil || !ok {
-					fmt.Fprint(cmd.OutOrStdout(), cliutil.Yellow(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
+					fmt.Fprint(cmd.OutOrStdout(), cliutil.Warning(fmt.Sprintf(i18n.T("confirm.cancelled"), expected)))
 					return nil
 				}
 				fmt.Fprintln(cmd.OutOrStdout())
@@ -88,7 +88,7 @@ func newMigrateCmd(flags *globalFlags) *cobra.Command {
 				return cliutil.PrintJSON(cmd.OutOrStdout(), map[string]any{"status": "ok", "batch": result.Batch, "migrations": executed})
 			}
 			cliutil.PrintExecutedHuman(cmd.OutOrStdout(), executed)
-			fmt.Fprint(cmd.OutOrStdout(), i18n.Tn("migrate.applied", len(executed)))
+			fmt.Fprint(cmd.OutOrStdout(), cliutil.SuccessBadgeLine(i18n.Tn("migrate.applied", len(executed))))
 			return nil
 		},
 	}

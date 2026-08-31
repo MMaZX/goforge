@@ -48,7 +48,7 @@ func FromRecords(records []migration.Record) []ExecutedMigration {
 // identical in every language.
 func PrintExecutedHuman(w io.Writer, executed []ExecutedMigration) {
 	for _, m := range executed {
-		fmt.Fprintf(w, "✓ %06d_%s\n", m.Version, m.Name)
+		fmt.Fprintf(w, "%s %06d_%s\n", Success("✓"), m.Version, m.Name)
 	}
 }
 
@@ -79,11 +79,13 @@ func FromStatusEntries(entries []migration.StatusEntry) []StatusRow {
 func PrintStatusHuman(w io.Writer, rows []StatusRow) {
 	for _, r := range rows {
 		mark := i18n.T("status.pending")
-		if r.Applied {
-			mark = i18n.T("status.applied", r.Batch)
-			if r.Dirty {
-				mark += " " + i18n.T("status.dirty")
-			}
+		switch {
+		case r.Applied && r.Dirty:
+			mark = Danger(i18n.T("status.applied", r.Batch) + " " + i18n.T("status.dirty"))
+		case r.Applied:
+			mark = Success(i18n.T("status.applied", r.Batch))
+		default:
+			mark = Muted(mark)
 		}
 		fmt.Fprintf(w, "%06d_%-40s %s\n", r.Version, r.Name, mark)
 	}

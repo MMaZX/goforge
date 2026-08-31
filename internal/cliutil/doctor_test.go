@@ -73,6 +73,47 @@ func TestPrintDoctorHumanHealthy(t *testing.T) {
 	}
 }
 
+// TestPrintDoctorHumanColored verifies that with color enabled only the
+// status marks and the final verdict carry ANSI codes — the check name and
+// detail stay in the terminal's default foreground, as requested.
+func TestPrintDoctorHumanColored(t *testing.T) {
+	SetColorEnabled(true)
+	defer SetColorEnabled(false)
+
+	i18n.SetLanguage("en")
+	t.Cleanup(func() { i18n.SetLanguage("en") })
+
+	t.Run("healthy", func(t *testing.T) {
+		var buf bytes.Buffer
+		PrintDoctorHuman(&buf, DoctorReport{Healthy: true, Checks: []DoctorCheck{{Name: "Config", OK: true}}})
+		got := buf.String()
+		if !strings.Contains(got, Success("✓")) {
+			t.Errorf("expected a Success-colored check mark, got:\n%s", got)
+		}
+		if strings.Contains(got, Success("Config")) || strings.Contains(got, Danger("Config")) {
+			t.Errorf("check name must stay uncolored, got:\n%s", got)
+		}
+		if !strings.Contains(got, SuccessBadge("All checks passed.")) {
+			t.Errorf("expected the verdict line as a SuccessBadge, got:\n%s", got)
+		}
+	})
+
+	t.Run("failed and skipped", func(t *testing.T) {
+		var buf bytes.Buffer
+		PrintDoctorHuman(&buf, doctorReport())
+		got := buf.String()
+		if !strings.Contains(got, Danger("✗")) {
+			t.Errorf("expected a Danger-colored check mark for a failed check, got:\n%s", got)
+		}
+		if !strings.Contains(got, Muted("…")) {
+			t.Errorf("expected a Muted mark for a skipped check, got:\n%s", got)
+		}
+		if !strings.Contains(got, DangerBadge("Some checks failed.")) {
+			t.Errorf("expected the verdict line as a DangerBadge, got:\n%s", got)
+		}
+	})
+}
+
 // TestDoctorJSONNotTranslated guards the design rule: Name/Detail feed the
 // --json report and must stay in English no matter the active language, so
 // the machine contract is stable. Only the human renderer translates.

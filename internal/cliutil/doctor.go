@@ -42,12 +42,12 @@ func PrintDoctorHuman(w io.Writer, report DoctorReport) {
 	fmt.Fprintln(w, i18n.T("doctor.header"))
 	fmt.Fprintln(w)
 	for _, c := range report.Checks {
-		mark := "✓"
+		mark := Success("✓")
 		switch {
 		case c.Skipped:
-			mark = "…"
+			mark = Muted("…")
 		case !c.OK:
-			mark = "✗"
+			mark = Danger("✗")
 		}
 		name := c.Name
 		if key, ok := doctorCheckKeys[c.Name]; ok {
@@ -62,8 +62,8 @@ func PrintDoctorHuman(w io.Writer, report DoctorReport) {
 	}
 	fmt.Fprintln(w)
 	if report.Healthy {
-		fmt.Fprintln(w, i18n.T("doctor.all_passed"))
+		fmt.Fprintln(w, SuccessBadge(i18n.T("doctor.all_passed")))
 	} else {
-		fmt.Fprintln(w, i18n.T("doctor.some_failed"))
+		fmt.Fprintln(w, DangerBadge(i18n.T("doctor.some_failed")))
 	}
 }
